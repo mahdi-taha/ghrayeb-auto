@@ -49,6 +49,8 @@ return [
     'categories_description' => 'استكشف فئات منتجات السيارات واعثر على الخيار المناسب لسيارتك.',
     'browse_category' => 'تصفح الفئة',
     'view_products' => 'عرض المنتجات',
+    'previous_categories' => 'الفئات السابقة',
+    'next_categories' => 'الفئات التالية',
     'catalog_heading' => 'منتجات السيارات',
     'catalog_description' => 'تصفح منتجات السيارات المتوفرة وتواصل معنا للحصول على المساعدة أو الاستفسار.',
     'all_categories' => 'جميع الفئات',

@@ -49,6 +49,8 @@ return [
     'categories_description' => 'Explore our automotive product categories and find the right option for your vehicle.',
     'browse_category' => 'Browse category',
     'view_products' => 'View Products',
+    'previous_categories' => 'Previous categories',
+    'next_categories' => 'Next categories',
     'catalog_heading' => 'Automotive Products',
     'catalog_description' => 'Browse available automotive products and contact us for guidance or product inquiries.',
     'all_categories' => 'All Categories',

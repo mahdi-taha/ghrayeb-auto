@@ -141,4 +141,95 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+
+    document.querySelectorAll('[data-category-carousel]').forEach((carousel) => {
+        const track = carousel.querySelector('[data-category-carousel-track]');
+        const items = [...carousel.querySelectorAll('[data-category-carousel-item]')];
+        const controls = carousel.querySelector('[data-category-carousel-controls]');
+        const previous = carousel.querySelector('[data-category-carousel-previous]');
+        const next = carousel.querySelector('[data-category-carousel-next]');
+
+        if (! track || items.length < 2 || ! controls || ! previous || ! next) {
+            return;
+        }
+
+        const isRtl = document.documentElement.dir === 'rtl';
+        let frame = null;
+        let measuredWidth = track.clientWidth;
+
+        const visibleCount = () => {
+            const itemWidth = items[0].getBoundingClientRect().width;
+            const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
+
+            return Math.max(1, Math.floor((track.clientWidth + gap) / (itemWidth + gap)));
+        };
+
+        const update = () => {
+            frame = null;
+            const trackBounds = track.getBoundingClientRect();
+            const firstBounds = items[0].getBoundingClientRect();
+            const lastBounds = items.at(-1).getBoundingClientRect();
+            const tolerance = 2;
+            const hasOverflow = track.scrollWidth > track.clientWidth + tolerance;
+            const atBeginning = isRtl
+                ? Math.abs(firstBounds.right - trackBounds.right) <= tolerance
+                : firstBounds.left >= trackBounds.left - tolerance;
+            const atEnd = isRtl
+                ? lastBounds.left >= trackBounds.left - tolerance
+                : lastBounds.right <= trackBounds.right + tolerance;
+
+            controls.hidden = ! hasOverflow;
+            previous.disabled = ! hasOverflow || atBeginning;
+            next.disabled = ! hasOverflow || atEnd;
+        };
+
+        const scheduleUpdate = () => {
+            if (frame !== null) {
+                return;
+            }
+
+            frame = window.requestAnimationFrame(update);
+        };
+
+        const move = (direction) => {
+            const step = visibleCount();
+            const itemWidth = items[0].getBoundingClientRect().width;
+            const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
+            const distance = (itemWidth + gap) * step * direction * (isRtl ? -1 : 1);
+
+            track.scrollBy({
+                left: distance,
+                behavior: reducedMotion ? 'auto' : 'smooth',
+            });
+        };
+
+        previous.addEventListener('click', () => move(-1));
+        next.addEventListener('click', () => move(1));
+        track.addEventListener('scroll', scheduleUpdate, { passive: true });
+
+        if ('ResizeObserver' in window) {
+            const resizeObserver = new ResizeObserver(() => {
+                if (track.clientWidth === measuredWidth) {
+                    return;
+                }
+
+                measuredWidth = track.clientWidth;
+                scheduleUpdate();
+            });
+
+            resizeObserver.observe(track);
+        } else {
+            window.addEventListener('resize', scheduleUpdate, { passive: true });
+        }
+
+        carousel.querySelectorAll('img').forEach((image) => {
+            if (! image.complete) {
+                image.addEventListener('load', scheduleUpdate, { once: true });
+                image.addEventListener('error', scheduleUpdate, { once: true });
+            }
+        });
+
+        document.fonts?.ready.then(scheduleUpdate);
+        window.requestAnimationFrame(() => window.requestAnimationFrame(update));
+    });
 });

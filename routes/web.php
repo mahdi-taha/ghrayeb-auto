@@ -16,7 +16,7 @@ Route::get('/', function () {
     $productCategories = ProductCategory::query()
         ->active()
         ->inHomepageOrder()
-        ->limit(6)
+        ->limit(10)
         ->get();
     $galleryItems = GalleryItem::query()
         ->active()

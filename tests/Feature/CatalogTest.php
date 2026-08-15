@@ -30,6 +30,66 @@ class CatalogTest extends TestCase
             ->assertDontSee($inactive->name_en);
     }
 
+    public function test_homepage_category_carousel_renders_each_available_count_once_up_to_ten(): void
+    {
+        foreach ([0, 1, 2, 3, 4, 5, 6, 7, 9, 10] as $count) {
+            ProductCategory::query()->delete();
+
+            foreach (range(1, $count) as $index) {
+                if ($count === 0) {
+                    break;
+                }
+
+                $this->category([
+                    'name_en' => "Category {$index}",
+                    'slug' => "category-{$count}-{$index}",
+                    'sort_order' => $index,
+                ]);
+            }
+
+            $response = $this->get('/')->assertOk();
+            $html = $response->getContent();
+
+            $this->assertSame($count, substr_count($html, 'data-category-carousel-item'));
+
+            if ($count === 0) {
+                $this->assertStringNotContainsString('data-category-carousel', $html);
+            } else {
+                $this->assertStringContainsString('data-category-count="'.$count.'"', $html);
+            }
+        }
+    }
+
+    public function test_homepage_category_carousel_caps_at_ten_and_preserves_order_and_controls(): void
+    {
+        foreach (range(1, 15) as $index) {
+            $this->category([
+                'name_en' => "Ordered Category {$index}",
+                'slug' => "ordered-category-{$index}",
+                'sort_order' => $index,
+                'is_featured' => $index === 15,
+            ]);
+        }
+
+        $response = $this->get('/')->assertOk();
+        $html = $response->getContent();
+
+        $this->assertSame(10, substr_count($html, 'data-category-carousel-item'));
+        $response
+            ->assertSeeInOrder(['Ordered Category 15', 'Ordered Category 1', 'Ordered Category 2'])
+            ->assertSee('aria-label="Previous categories"', false)
+            ->assertSee('aria-label="Next categories"', false)
+            ->assertDontSee('Ordered Category 10')
+            ->assertDontSee('Ordered Category 14');
+
+        $this->withSession(['locale' => 'ar'])
+            ->get('/')
+            ->assertOk()
+            ->assertSee('aria-label="الفئات السابقة"', false)
+            ->assertSee('aria-label="الفئات التالية"', false)
+            ->assertSee('dir="rtl"', false);
+    }
+
     public function test_catalog_hides_inactive_products_and_products_in_inactive_categories(): void
     {
         $activeCategory = $this->category();
